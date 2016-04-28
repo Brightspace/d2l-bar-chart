@@ -1,0 +1,19 @@
+{
+  "name": "d2l-bar-chart",
+  "version": "0.0.1",
+  "description": "Simple bar chart web component using d3",
+  "scripts": {
+    "postinstall": "bower install",
+    "test": "polylint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Brightspace/d2l-bar-chart.git"
+  },
+  "author": "D2L Corporation",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "bower": "^1.7.7",
+    "polylint": "^2.10.0"
+  }
+}

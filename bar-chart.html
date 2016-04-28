@@ -1,0 +1,372 @@
+<link rel='import' href='../polymer/polymer.html'>
+<link rel='import' href='../vui-colors/colors.html'>
+<link rel='import' href='../vui-typography/typography.html'>
+<link rel='import' href='d3-import.html'>
+
+<dom-module id='d2l-bar-chart'>
+	<template>
+		<style include='vui-colors'>
+			:host > .tooltip {
+				background-color: var(--vui-color-ferrite);
+				border-radius: 6px;
+				box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.1);
+				color: #FFF;
+				display: inline-block;
+				margin-top: -10px;
+				opacity: 0;
+				padding: 17px 21px;
+				pointer-events: none;
+				position: fixed;
+				text-align: left;
+				transition: opacity 0.3s ease-out , margin-top 0.3s ease-out, margin-left 0.3s ease-out;
+				z-index: 999;
+				min-width: 100px;
+			}
+
+			:host > .tooltip::before {
+				border-top: 8px solid var(--vui-color-ferrite);
+				border-left: 10px solid transparent;
+				border-right: 10px solid transparent;
+				bottom: -8px;
+				left: 50%;
+				content: '';
+				height: 0;
+				position: absolute;
+				width: 0;
+				margin-left: -10px;
+			}
+
+			:host > .tooltip > .range-text {
+				display: block;
+				line-height: 1.4;
+				letter-spacing: 0.4px;
+				font-family: 'Lato';
+				font-size: 14px;
+				font-weight: 400;
+				margin: 0 0 8px 0;
+				height: 20px;
+			}
+
+			:host > .tooltip > .count-text {
+				display: block;
+				margin: 0;
+				line-height: 1.0;
+				letter-spacing: 0.6px;
+				font-family: 'Lato';
+				font-size: 20px;
+				font-weight: 300;
+				color: #FFFFFF;
+			}
+
+			:host > ::content .axis-number {
+				font-family: 'Lato';
+				color: var(--vui-color-ferrite);
+				font-weight: 300;
+				font-size: 10px;
+			}
+
+			:host > ::content svg {
+				vertical-align: bottom;
+			}
+
+		</style>
+
+		<div class='chart-container'>
+			<content></content>
+		</div>
+		<div class='tooltip'>
+			<span class='range-text'></span>
+			<span class='count-text'></span>
+		</div>
+	</template>
+
+	<script>
+		Polymer({
+			is: 'd2l-bar-chart',
+
+			properties: {
+
+				/*
+				*	Options object:
+				*	{
+				*		showTooltip: Boolean,
+				*		showAxis: Boolean,
+				*		axisHeight: Number,
+				*		barSpaces: Number
+				*	}
+				*/
+				options: {
+					type: Object,
+					value: function() { return {}; }
+				},
+
+				height: {
+					type: Number,
+					value: 60,
+				},
+
+				width: {
+					type: Number,
+					value: 310,
+				},
+
+				data: {
+					type: Array,
+					value: [],
+				}
+			},
+
+			observers: [
+				'propertiesChanged( options, height, width, data )'
+			],
+
+			created: function() {
+				this.ns = {
+					svg: 'http://www.w3.org/2000/svg'
+				}
+				this.defaultBarFill = '#9B9B9B';
+			},
+
+			ready: function() {
+				this._createChart();
+				this._drawChart();
+			},
+
+			_setOptions:function( options ) {
+				this.axisHeight = options.axisHeight ? options.axisHeight : 10;
+				this.barSpaces = options.barSpaces ? options.barSpaces : 3;
+				this.showAxis = options.showAxis ? options.showAxis : false;
+				this.showTooltip = options.showTooltip ? options.showTooltip : false;
+			},
+
+			// Handler for when property value change
+			propertiesChanged: function( options, height, width, data ) {
+				this.height = height;
+				this.width = width;
+				this.data = data;
+				this._setOptions( options );
+			},
+
+			// Creates DOM element with teh SVG namespace
+			_createSVGNSElement: function( type ) {
+				return document.createElementNS( this.ns.svg, type );
+			},
+
+			// Create SVG Element for the bar chart
+			_createChart: function() {
+				if ( !this.svg ) {
+					var adjustedHeight = this.showAxis ? this.height + this.axisHeight : this.height;
+					var adjustedWidth = this.showAxis ? this.width + 10 : this.width;
+					var svg = this._createSVGNSElement( 'svg' );
+					svg.setAttribute( 'width', adjustedWidth );
+					svg.setAttribute( 'height', adjustedHeight );
+					this.svg = svg;
+				}
+			},
+
+			/*
+			*	Get unique identifier for a bar rect in the graph. This is needed to identify the
+			*	bar under the overlay when a mouse hover event is triggered.
+			*	@param d {Object} data object for given bar
+			*	@param i {Number} index of given bar
+			* 	@xScale {Function} X Scale created by d3 for chart
+			* 	@yScale {Function} Y Scale created by d3 for chart
+			*/
+			_getUniqueId: function( d, i, xScale, yScale ) {
+				var x = Math.floor( xScale.rangeBand() );
+				var y = Math.floor( d.value === 0 ? this.height - 1 : this.height - yScale( d.value ) );
+				var height = Math.floor( this.height - ( d.value === 0 ? this.height - 1 : this.height - yScale( d.value ) ) );
+				return 'bar-' +  i  + d.value + x + y + height;
+			},
+
+			// Create d3 scale for the X axis
+			_getXScale: function() {
+				return d3.scale.ordinal()
+					.domain( d3.range( this.data.length ) )
+					.rangeRoundBands( [0, this.width], 0.10 );
+			},
+
+			// Create d3 scale for Y axis
+			_getYScale: function() {
+ 				return d3.scale.linear()
+					.domain( [0, d3.max( this.data, function( d ) { return d.value; } )] )
+					.range( [0, this.height] );
+			},
+
+			/*
+			*	Creates chart axis data
+			*	@params {Function} X Scale created by d3 for chart
+			*/
+			_createAxisData: function( xScale ) {
+				var axisData = [];
+				var textHeight = this.height + this.axisHeight;
+
+				for ( var i = 0; i < this.data.length; i++ ) {
+					var d = this.data[i];
+					var xValue = xScale( i );
+					var barWidth = xScale.rangeBand() - this.barSpaces;
+
+					if ( i === 0 ) {
+						axisData.push({
+							text: '0',
+							x: xValue,
+							y: textHeight
+						});
+					}
+
+					axisData.push({
+						text: d.range.end,
+						x: xValue + barWidth - this.barSpaces,
+						y: textHeight
+					});
+				}
+
+				return axisData;
+			},
+
+			/*
+			*	Render axis for chart
+			*	@param svg {Object} svg element for bar chart
+			*	@param xScale {Function} X Scale created by d3 for chart
+			*/
+			_drawAxis: function( svg, xScale ) {
+				var axisData = this._createAxisData( xScale );
+				var axis = svg.append( 'g' ).selectAll( '.axis-number' ).data( axisData );
+				axis.enter().append( 'text' );
+
+				axis
+					.attr( 'class', 'axis-number' )
+					.attr( 'x', function( d ) { return d.x; } )
+					.attr( 'y', function( d ) { return d.y; } )
+					.attr( 'fill', 'black' )
+					.text( function( d ) { return d.text; } );
+			},
+
+			// Draws the chart
+			_drawChart: function() {
+				var self = this;
+
+				self.$$('.chart-container').appendChild( self.svg );
+				var svg = d3.select( self.svg ).append( 'g' );
+
+				var xScale = self._getXScale();
+				var yScale = self._getYScale();
+
+				if ( self.showAxis ) {
+					self._drawAxis( svg, xScale );
+				}
+
+				var bars = svg.selectAll( '.bar' ).data( self.data );
+				var overlayBars = svg.selectAll( '.bar-overlay' ).data( self.data );
+				bars.enter().append( 'rect' );
+				overlayBars.enter().append( 'rect' );
+
+				var setBarXValue = function( d, i ) {
+					return xScale( i );
+				}
+
+				var setBarYValue = function( d ) {
+					return d.value === 0 ? self.height - 1 : self.height - yScale( d.value )
+				}
+
+				var setBarHeight = function( d ) {
+					return self.height - ( d.value === 0 ? self.height - 1 : self.height - yScale( d.value ) );
+				}
+
+				var setBarFill = function( d ) {
+					return d.fill && d.value > 0 ? d.fill : self.defaultBarFill;
+				}
+
+				var setBarId = function( d, i ) {
+					return self._getUniqueId( d, i, xScale, yScale );
+				}
+
+				bars
+					.attr( 'id', setBarId )
+					.attr( 'class', 'bar' )
+					.attr( 'x', setBarXValue )
+					.attr( 'width', xScale.rangeBand() )
+					.attr( 'y', setBarYValue )
+					.attr( 'height', setBarHeight )
+					.attr( 'fill', setBarFill )
+					.attr( 'ry', 5 )
+					.attr( 'rc', 5 );
+
+				overlayBars
+					.attr( 'class', 'bar-overlay' )
+					.attr( 'x', setBarXValue )
+					.attr( 'width', xScale.rangeBand() )
+					.attr( 'y', 0 )
+					.attr( 'height', self.height )
+					.attr( 'fill-opacity', 0 )
+					.on('mouseover', function( d, i ) {
+						var id = self._getUniqueId( d, i, xScale, yScale );
+						var bar = d3.select( '#' + id );
+
+						if ( d.hoverFill && d.value > 0 ) {
+							bar.attr( 'fill', d.hoverFill );
+						}
+
+						if ( self.showTooltip ) {
+							self._showTooltip( d, bar );
+						}
+					})
+					.on('mouseout', function( d, i ) {
+						var id = self._getUniqueId( d, i, xScale, yScale );
+
+						if ( d.fill && d.value > 0 ) {
+							d3.select( '#' + id ).attr( 'fill', d.fill );
+						}
+
+						if ( self.showTooltip ) {
+							self._hideTooltip();
+						}
+					});
+			},
+
+			/*
+			*	Sets tooltip content and shows the tooltip over the bar rect
+			*	@param d {Object} data object for hovered bar rect
+			*	@param hoverBar {Object} DOM element for hovered rect
+			*/
+			_showTooltip: function( d, hoveredBar ) {
+				var divTooltip = d3.select( this.$$('.tooltip') );
+
+				var rangeString = d.range.start + '% - ';
+				rangeString += d.range.end === 100 ? d.range.end : d.range.end;
+				rangeString += '%';
+
+				var rangeText = d3.select( this.$$( '.range-text' ) );
+				rangeText.html( rangeString );
+
+				var countText = d3.select( this.$$( '.count-text' ) );
+				countText.html( d.value + ' Learners' );
+
+				var target = d3.event.target;
+				var barWidth = parseInt( target.getAttribute( 'width' ) );
+				var yLocation = parseInt( hoveredBar[0][0].getAttribute( 'y' ) );
+				var targetTop = target.getBoundingClientRect().top;
+				var targetLeft = target.getBoundingClientRect().left;
+				var tooltipRect = divTooltip.node().getBoundingClientRect();
+
+				var offsetX = barWidth / 2;
+				var left = targetLeft - ( tooltipRect.width / 2 ) + offsetX;
+				var top = targetTop + yLocation - tooltipRect.height - 8;
+
+				divTooltip
+					.style( 'left', left +'px' )
+					.style( 'top', top + 'px' )
+					.style( 'margin-top', '0' )
+					.style( 'opacity', 1 );
+			},
+
+			// Hides the tooltip
+			_hideTooltip: function() {
+				var divTooltip = d3.select( this.$$('.tooltip') );
+				divTooltip
+					.style( 'margin-top', '-10px' )
+					.style( 'opacity', 0 );
+			}
+		})
+	</script>
+</dom-module>

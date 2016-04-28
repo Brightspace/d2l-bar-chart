@@ -1,0 +1,25 @@
+{
+  "name": "d2l-bar-chart",
+  "description": "Simple bar chart web component using d3",
+  "main": [
+    "bar-chart.html"
+  ],
+  "license": "Apache-2.0",
+  "ignore": [
+    ".editorconfig",
+    ".gitattributes",
+    ".gitignore",
+    ".travis.yml",
+    "package.json",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "^1.4.0",
+    "d3": "~3.5.16",
+    "vui-colors": "^1.0.1",
+    "vui-typography": "^3.1.0"
+  }
+}
