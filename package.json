@@ -2,6 +2,7 @@
   "name": "d2l-bar-chart",
   "version": "0.0.1",
   "description": "Simple bar chart web component using d3",
+  "private": true,
   "scripts": {
     "postinstall": "bower install",
     "test": "polylint"
