@@ -2,6 +2,8 @@
 
 [![Bower version][bower-image]][bower-url]
 [![Build status][ci-image]][ci-url]
+[![Build status][ci-image]][ci-url]
+[![Dependency Status][dependencies-image]][dependencies-url]
 
 A simple bar chart using d3 that provides the option of display axis and showing a tooltip on hover.
 
@@ -9,7 +11,7 @@ A simple bar chart using d3 that provides the option of display axis and showing
 
 `d2l-bar-chart` can be installed from [Bower][bower-url]:
 ```shell
-bower install vui-typography
+bower install d2l-bar-chart
 ```
 
 ## Usage
