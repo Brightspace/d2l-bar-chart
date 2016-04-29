@@ -333,7 +333,7 @@
 				var divTooltip = d3.select( this.$$('.tooltip') );
 
 				var rangeString = d.range.start + '% - ';
-				rangeString += d.range.end === 100 ? d.range.end : d.range.end;
+				rangeString += d.range.end === 100 ? d.range.end : d.range.end - 1;
 				rangeString += '%';
 
 				var rangeText = d3.select( this.$$( '.range-text' ) );
