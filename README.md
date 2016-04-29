@@ -57,7 +57,7 @@ Include [webcomponent.js](http://webcomponents.org/polyfills/) "lite" polyfill (
 ]
 ```
 
-**NOTE** : Tooltip displays the grade range in the following format: `{range.start}% - {range.end}%`.
+**NOTE** : Tooltip displays the grade range in the following format: `{range.start}% - {range.end - 1}%`.
 
 ## Usage in Production
 
