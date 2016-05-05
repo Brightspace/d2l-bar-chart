@@ -35,8 +35,8 @@ Include [webcomponent.js](http://webcomponents.org/polyfills/) "lite" polyfill (
 {
 	showAxis: {Boolean} : Default = false
 	showTooltip: {Boolean} : Default = false
-	barSpaces: {Boolean} : Padding between bar rectangles. Default is 3
-	axisHeight: {Boolean} : Height of axis text. Default is 10
+	barSpaces: {Number} : Padding between bar rectangles. Default is 3
+	axisHeight: {Number} : Height of axis text. Default is 10
 }
 ```
 **width** - Width of the bar chart
@@ -49,7 +49,7 @@ Include [webcomponent.js](http://webcomponents.org/polyfills/) "lite" polyfill (
 	{
 		value: {Number}
 		fill: {String} - Bar rect fill color. Html color code. If not provided will default to #9B9B9B
-		hover: {String} - On hover bar rect fill color. Html color code. If not provided will not apply
+		hoverFill: {String} - On hover bar rect fill color. Html color code. If not provided will not apply
 		range: {
 			start: {Number} - Start of score range
 			end: {Number} - End of score range. Refer to note below about tooltip display
