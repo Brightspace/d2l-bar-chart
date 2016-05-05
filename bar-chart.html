@@ -61,8 +61,8 @@
 			:host > ::content .axis-number {
 				font-family: 'Lato';
 				color: var(--vui-color-ferrite);
-				font-weight: 300;
-				font-size: 10px;
+				font-weight: 500;
+				font-size: 14px;
 			}
 
 			:host > ::content svg {
@@ -216,7 +216,7 @@
 
 					axisData.push({
 						text: d.range.end,
-						x: xValue + barWidth - this.barSpaces,
+						x: xValue + barWidth,
 						y: textHeight
 					});
 				}
@@ -285,7 +285,7 @@
 					.attr( 'id', setBarId )
 					.attr( 'class', 'bar' )
 					.attr( 'x', setBarXValue )
-					.attr( 'width', xScale.rangeBand() )
+					.attr( 'width', xScale.rangeBand() - this.barSpaces )
 					.attr( 'y', setBarYValue )
 					.attr( 'height', setBarHeight )
 					.attr( 'fill', setBarFill )
