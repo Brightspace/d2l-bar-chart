@@ -125,6 +125,7 @@
 					svg: 'http://www.w3.org/2000/svg'
 				}
 				this.defaultBarFill = '#9B9B9B';
+				this.uniqueIdMap = {};
 			},
 
 			ready: function() {
@@ -167,16 +168,16 @@
 			/*
 			*	Get unique identifier for a bar rect in the graph. This is needed to identify the
 			*	bar under the overlay when a mouse hover event is triggered.
-			*	@param d {Object} data object for given bar
-			*	@param i {Number} index of given bar
-			* 	@xScale {Function} X Scale created by d3 for chart
-			* 	@yScale {Function} Y Scale created by d3 for chart
 			*/
-			_getUniqueId: function( d, i, xScale, yScale ) {
-				var x = Math.floor( xScale.rangeBand() );
-				var y = Math.floor( d.value === 0 ? this.height - 1 : this.height - yScale( d.value ) );
-				var height = Math.floor( this.height - ( d.value === 0 ? this.height - 1 : this.height - yScale( d.value ) ) );
-				return 'bar-' +  i  + d.value + x + y + height;
+			_createUniqueId: function( i ) {
+				let uniqueString = Math.random().toString(36).substr(2,9);
+				let uniqueId = 'bar_' + uniqueString;
+				this.uniqueIdMap[i] = uniqueId;
+				return uniqueId;
+			},
+
+			_getUniqueId: function( i ) {
+				return this.uniqueIdMap[i];
 			},
 
 			// Create d3 scale for the X axis
@@ -278,7 +279,7 @@
 				}
 
 				var setBarId = function( d, i ) {
-					return self._getUniqueId( d, i, xScale, yScale );
+					return self._createUniqueId( i );
 				}
 
 				bars
@@ -300,7 +301,7 @@
 					.attr( 'height', self.height )
 					.attr( 'fill-opacity', 0 )
 					.on('mouseover', function( d, i ) {
-						var id = self._getUniqueId( d, i, xScale, yScale );
+						var id = self._getUniqueId( i );
 						var bar = d3.select( '#' + id );
 
 						if ( d.hoverFill && d.value > 0 ) {
@@ -312,7 +313,7 @@
 						}
 					})
 					.on('mouseout', function( d, i ) {
-						var id = self._getUniqueId( d, i, xScale, yScale );
+						var id = self._getUniqueId( i );
 
 						if ( d.fill && d.value > 0 ) {
 							d3.select( '#' + id ).attr( 'fill', d.fill );
