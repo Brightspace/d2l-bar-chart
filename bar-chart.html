@@ -170,8 +170,8 @@
 			*	bar under the overlay when a mouse hover event is triggered.
 			*/
 			_createUniqueId: function( i ) {
-				let uniqueString = Math.random().toString(36).substr(2,9);
-				let uniqueId = 'bar_' + uniqueString;
+				var uniqueString = Math.random().toString(36).substr(2,9);
+				var uniqueId = 'bar_' + uniqueString;
 				this.uniqueIdMap[i] = uniqueId;
 				return uniqueId;
 			},
