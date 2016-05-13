@@ -4,7 +4,7 @@
 [![Build status][ci-image]][ci-url]
 [![Dependency Status][dependencies-image]][dependencies-url]
 
-A simple bar chart using d3 that provides the option of display axis and showing a tooltip on hover.
+A simple bar chart using d3 that provides the option of displaying an axis and/or showing a tooltip on hover.
 
 ## Installation
 
