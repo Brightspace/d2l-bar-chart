@@ -69,6 +69,15 @@
 				vertical-align: bottom;
 			}
 
+			:host > ::content axis {
+				font-weight: 500;
+				font-size: 14px
+			}
+
+			:host > ::content .x.axis path {
+				display: none;
+			}
+
 		</style>
 
 		<div class='chart-container'>
@@ -92,7 +101,8 @@
 				*		showTooltip: Boolean,
 				*		showAxis: Boolean,
 				*		axisHeight: Number,
-				*		barSpaces: Number
+				*		barSpaces: Number,
+				*		isLabeledAxis: Boolean
 				*	}
 				*/
 				options: {
@@ -134,10 +144,11 @@
 			},
 
 			_setOptions:function( options ) {
-				this.axisHeight = options.axisHeight ? options.axisHeight : 10;
+				this.axisHeight = options.axisHeight ? options.axisHeight : 20;
 				this.barSpaces = options.barSpaces ? options.barSpaces : 3;
 				this.showAxis = options.showAxis ? options.showAxis : false;
 				this.showTooltip = options.showTooltip ? options.showTooltip : false;
+				this.isLabeledAxis = options.isLabeledAxis ? options.isLabeledAxis : false;
 			},
 
 			// Handler for when property value change
@@ -182,9 +193,15 @@
 
 			// Create d3 scale for the X axis
 			_getXScale: function() {
-				return d3.scale.ordinal()
-					.domain( d3.range( this.data.length ) )
+				var xScale =  d3.scale.ordinal()
 					.rangeRoundBands( [0, this.width], 0.10 );
+				if ( this.isLabeledAxis ) {
+					//Since the axis labeles are pulled from the scale domain we need to use the labels here
+					xScale.domain( this.data.map( function(d) { return d.label; } ) );
+				} else {
+					xScale.domain( d3.range( this.data.length ) );
+				}
+					return xScale;
 			},
 
 			// Create d3 scale for Y axis
@@ -253,8 +270,16 @@
 				var xScale = self._getXScale();
 				var yScale = self._getYScale();
 
-				if ( self.showAxis ) {
-					self._drawAxis( svg, xScale );
+				if ( self.showAxis === true ) {
+					if ( self.isLabeledAxis ) {
+						var xAxis = d3.svg.axis().scale( xScale ).orient( "bottom" );
+						svg.append( "g" )
+							.attr( "class", "x axis" )
+							.attr( "transform", "translate(0," + self.height + ")" )
+							.call( xAxis );
+					} else{
+						self._drawAxis( svg, xScale );
+					}
 				}
 
 				var bars = svg.selectAll( '.bar' ).data( self.data );
@@ -263,7 +288,10 @@
 				overlayBars.enter().append( 'rect' );
 
 				var setBarXValue = function( d, i ) {
-					return xScale( i );
+					if ( self.isLabeledAxis ) {
+						return xScale( d.label ) + ( self.barSpaces / 2 );
+					}
+					return xScale(i);
 				}
 
 				var setBarYValue = function( d ) {
@@ -333,9 +361,16 @@
 			_showTooltip: function( d, hoveredBar ) {
 				var divTooltip = d3.select( this.$$('.tooltip') );
 
-				var rangeString = d.range.start + '% - ';
-				rangeString += d.range.end === 100 ? d.range.end : d.range.end - 1;
-				rangeString += '%';
+				var rangeString = "";
+
+				if ( this.isLabeledAxis ) {
+					rangeString = d.label
+				} else {
+					rangeString = d.range.start + '% - ';
+					rangeString += d.range.end === 100 ? d.range.end : d.range.end - 1;
+					rangeString += '%';
+
+				}
 
 				var rangeText = d3.select( this.$$( '.range-text' ) );
 				rangeText.html( rangeString );

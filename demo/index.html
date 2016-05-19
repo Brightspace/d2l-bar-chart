@@ -11,13 +11,19 @@
     <style>
       #graph-1 {
         position: fixed;
-        top: 150px;
+        top: 100px;
         left: 150px;
       }
 
       #graph-2 {
         position: fixed;
-        top: 450px;
+        top: 300px;
+        left: 150px;
+      }
+
+      #graph-3 {
+        position: fixed;
+        top: 500px;
         left: 150px;
       }
 
@@ -26,11 +32,17 @@
   </head>
   <body>
     <div id='graph-1'>
-      <d2l-bar-chart options='{ "showTooltip": "true", "showAxis": "true" }' data='[{"value": 0, "range": { "start": 0, "end": 50 } },{"value": 4, "range": { "start": 50, "end": 70 }, "fill": "#ffba59", "hoverFill": "#FFD859" },{"value": 6, "range": { "start": 70, "end": 80 }, "fill": "#ffba59", "hoverFill": "#FFD859" },{"value": 8, "range": { "start": 90, "end": 100 }, "fill": "#46a661", "hoverFill": "#79D92F" }]'></d2l-bar-chart>
+      <d2l-bar-chart options='{ "showTooltip": true, "showAxis": true }' data='[{"value": 0, "range": { "start": 0, "end": 50 } },{"value": 4, "range": { "start": 50, "end": 70 }, "fill": "#ffba59", "hoverFill": "#FFD859" },{"value": 6, "range": { "start": 70, "end": 80 }, "fill": "#ffba59", "hoverFill": "#FFD859" },{"value": 8, "range": { "start": 90, "end": 100 }, "fill": "#46a661", "hoverFill": "#79D92F" }]'></d2l-bar-chart>
       </div>
       <div id='graph-2'>
       <d2l-bar-chart data='[{"value": 20, "range": { "start": 0, "end": 50 }, "fill": "#cd2026", "hoverFill": "#ED3900" },{"value": 7, "range": { "start": 50, "end": 70 }, "fill": "#ffba59", "hoverFill": "#FFD859" },{"value": 2, "range": { "start": 70, "end": 80 }, "fill": "#ffba59", "hoverFill": "#FFD859" },{"value": 8, "range": { "start": 90, "end": 100 }, "fill": "#46a661", "hoverFill": "#79D92F" }]'></d2l-bar-chart>
       </div>
+      <div id='graph-3'>
+      <d2l-bar-chart options='{ "showTooltip": true, "showAxis": true, "isLabeledAxis": true}'
+        data='[ {"value": 4, "label": "Level 1", "fill": "#46a661", "hoverFill": "#FFD859" },
+          {"value": 6, "label": "Level 2", "fill": "#ffba59", "hoverFill": "#FFD859" },
+          {"value": 8, "label": "Level 3", "fill": "#46a661", "hoverFill": "#79D92F" }]'>
+      </d2l-bar-chart>
       </div>
   </body>
 </html>
