@@ -37,6 +37,7 @@ Include [webcomponent.js](http://webcomponents.org/polyfills/) "lite" polyfill (
 	showTooltip: {Boolean} : Default = false
 	barSpaces: {Number} : Padding between bar rectangles. Default is 3
 	axisHeight: {Number} : Height of axis text. Default is 10
+	axisType: {string} : text or numeric
 }
 ```
 **width** - Width of the bar chart
@@ -50,15 +51,18 @@ Include [webcomponent.js](http://webcomponents.org/polyfills/) "lite" polyfill (
 		value: {Number}
 		fill: {String} - Bar rect fill color. Html color code. If not provided will default to #9B9B9B
 		hoverFill: {String} - On hover bar rect fill color. Html color code. If not provided will not apply
-		range: {
+		info: {
 			start: {Number} - Start of score range
 			end: {Number} - End of score range. Refer to note below about tooltip display
+			label: {String} Used on the axis and tooltip if axisType is text
+			max: {Number} Maximum number the bar represents
 		}
 	}
 ]
 ```
 
-**NOTE** : Tooltip displays the grade range in the following format: `{range.start}% - {range.end - 1}%`.
+**NOTE** : Tooltip displays the grade range in the following format: `{info.start}% - {info.end - 1}%`.
+**NOTE** : `Up to info.max points` (When displayed as text)
 
 ## Usage in Production
 

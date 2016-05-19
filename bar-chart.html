@@ -58,6 +58,17 @@
 				color: #FFFFFF;
 			}
 
+			:host > .tooltip > .label-text {
+				display: none;
+				line-height: 1.4;
+				letter-spacing: 0.4px;
+				font-family: 'Lato';
+				font-size: 14px;
+				font-weight: 400;
+				margin: 0 0 8px 0;
+				height: 20px;
+			}
+
 			:host > ::content .axis-number {
 				font-family: 'Lato';
 				color: var(--vui-color-ferrite);
@@ -71,7 +82,7 @@
 
 			:host > ::content axis {
 				font-weight: 500;
-				font-size: 14px
+				font-size: 14px;
 			}
 
 			:host > ::content .x.axis path {
@@ -84,6 +95,7 @@
 			<content></content>
 		</div>
 		<div class='tooltip'>
+			<span class='label-text'></span>
 			<span class='range-text'></span>
 			<span class='count-text'></span>
 		</div>
@@ -102,7 +114,7 @@
 				*		showAxis: Boolean,
 				*		axisHeight: Number,
 				*		barSpaces: Number,
-				*		isLabeledAxis: Boolean
+				*		axisType: String //Must be "text" or "numeric""
 				*	}
 				*/
 				options: {
@@ -147,8 +159,16 @@
 				this.axisHeight = options.axisHeight ? options.axisHeight : 20;
 				this.barSpaces = options.barSpaces ? options.barSpaces : 3;
 				this.showAxis = options.showAxis ? options.showAxis : false;
+				this.axisType = options.axisType ? options.axisType.toLowerCase() : "none";
 				this.showTooltip = options.showTooltip ? options.showTooltip : false;
-				this.isLabeledAxis = options.isLabeledAxis ? options.isLabeledAxis : false;
+
+				//If not set to text or numeric not sure what axis to use so turn axis off.
+				if ( this.showAxis &&
+					this.axisType !== "text" &&
+					this.axisType !== "numeric"
+				) {
+					this.showAxis = false;
+				}
 			},
 
 			// Handler for when property value change
@@ -195,9 +215,9 @@
 			_getXScale: function() {
 				var xScale =  d3.scale.ordinal()
 					.rangeRoundBands( [0, this.width], 0.10 );
-				if ( this.isLabeledAxis ) {
+				if ( this.axisType === "text" ) {
 					//Since the axis labeles are pulled from the scale domain we need to use the labels here
-					xScale.domain( this.data.map( function(d) { return d.label; } ) );
+					xScale.domain( this.data.map( function(d) { return d.info.label; } ) );
 				} else {
 					xScale.domain( d3.range( this.data.length ) );
 				}
@@ -233,7 +253,7 @@
 					}
 
 					axisData.push({
-						text: d.range.end,
+						text: d.info.end,
 						x: xValue + barWidth,
 						y: textHeight
 					});
@@ -269,9 +289,8 @@
 
 				var xScale = self._getXScale();
 				var yScale = self._getYScale();
-
-				if ( self.showAxis === true ) {
-					if ( self.isLabeledAxis ) {
+				if ( self.showAxis ) {
+					if ( self.axisType === "text" ) {
 						var xAxis = d3.svg.axis().scale( xScale ).orient( "bottom" );
 						svg.append( "g" )
 							.attr( "class", "x axis" )
@@ -288,8 +307,8 @@
 				overlayBars.enter().append( 'rect' );
 
 				var setBarXValue = function( d, i ) {
-					if ( self.isLabeledAxis ) {
-						return xScale( d.label ) + ( self.barSpaces / 2 );
+					if ( self.axisType === "text" ) {
+						return xScale( d.info.label ) + ( self.barSpaces / 2 );
 					}
 					return xScale(i);
 				}
@@ -361,15 +380,18 @@
 			_showTooltip: function( d, hoveredBar ) {
 				var divTooltip = d3.select( this.$$('.tooltip') );
 
-				var rangeString = "";
+				var rangeString = "up to ";
+				if ( this.axisType === "text" ) {
+					var labelText = d3.select( this.$$( '.label-text' ));
+					labelText.html( d.info.label );
+					labelText.style('display', 'block');
 
-				if ( this.isLabeledAxis ) {
-					rangeString = d.label
+					rangeString += d.info.max;
+					rangeString += " point(s)";
 				} else {
-					rangeString = d.range.start + '% - ';
-					rangeString += d.range.end === 100 ? d.range.end : d.range.end - 1;
+					rangeString = d.info.start + '% - ';
+					rangeString += d.info.end === 100 ? d.info.end : d.info.end - 1;
 					rangeString += '%';
-
 				}
 
 				var rangeText = d3.select( this.$$( '.range-text' ) );
