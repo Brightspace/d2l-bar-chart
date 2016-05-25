@@ -27,8 +27,8 @@
 				border-top: 8px solid var(--vui-color-ferrite);
 				border-left: 10px solid transparent;
 				border-right: 10px solid transparent;
-				bottom: -8px;
-				left: 50%;
+				bottom: -7px;
+				left: 49%;
 				content: '';
 				height: 0;
 				position: absolute;
@@ -58,15 +58,35 @@
 				color: #FFFFFF;
 			}
 
-			:host > ::content .axis-number {
+			:host > .tooltip > .label-text {
+				display: none;
+				line-height: 1.4;
+				letter-spacing: 0.4px;
+				font-family: 'Lato';
+				font-size: 14px;
+				font-weight: 400;
+				margin: 0 0 8px 0;
+				height: 20px;
+			}
+
+			:host > ::content .d2l-bar-chart-axis-container {
+				position: relative;
+			}
+
+			:host > ::content .d2l-bar-chart-axis {
 				font-family: 'Lato';
 				color: var(--vui-color-ferrite);
 				font-weight: 500;
 				font-size: 14px;
+				position: absolute;
 			}
 
-			:host > ::content svg {
-				vertical-align: bottom;
+			:host > ::content .d2l-bar-chart-text-axis {
+				white-space: nowrap;
+				text-overflow: ellipsis;
+				text-align: center;
+				overflow: hidden;
+				display: block;
 			}
 
 		</style>
@@ -74,7 +94,9 @@
 		<div class='chart-container'>
 			<content></content>
 		</div>
+		<div class="d2l-bar-chart-axis-container"></div>
 		<div class='tooltip'>
+			<span class='label-text'></span>
 			<span class='range-text'></span>
 			<span class='count-text'></span>
 		</div>
@@ -91,8 +113,8 @@
 				*	{
 				*		showTooltip: Boolean,
 				*		showAxis: Boolean,
-				*		axisHeight: Number,
-				*		barSpaces: Number
+				*		barSpaces: Number,
+				*		axisType: String //Must be "text" or "numeric""
 				*	}
 				*/
 				options: {
@@ -102,17 +124,17 @@
 
 				height: {
 					type: Number,
-					value: 60,
+					value: 60
 				},
 
 				width: {
 					type: Number,
-					value: 310,
+					value: 310
 				},
 
 				data: {
 					type: Array,
-					value: [],
+					value: []
 				}
 			},
 
@@ -123,7 +145,7 @@
 			created: function() {
 				this.ns = {
 					svg: 'http://www.w3.org/2000/svg'
-				}
+				};
 				this.defaultBarFill = '#9B9B9B';
 				this.uniqueIdMap = {};
 			},
@@ -134,10 +156,19 @@
 			},
 
 			_setOptions:function( options ) {
-				this.axisHeight = options.axisHeight ? options.axisHeight : 10;
 				this.barSpaces = options.barSpaces ? options.barSpaces : 3;
 				this.showAxis = options.showAxis ? options.showAxis : false;
+				this.axisType = options.axisType ? options.axisType.toLowerCase() : 'none';
 				this.showTooltip = options.showTooltip ? options.showTooltip : false;
+
+				//If not set to text or numeric not sure what axis to use so turn axis off.
+				if ( this.showAxis &&
+					this.axisType !== 'text' &&
+					this.axisType !== 'numeric'
+				) {
+					console.warn( 'Hiding axis due to missing/unknown axis type' );
+					this.showAxis = false;
+				}
 			},
 
 			// Handler for when property value change
@@ -156,7 +187,7 @@
 			// Create SVG Element for the bar chart
 			_createChart: function() {
 				if ( !this.svg ) {
-					var adjustedHeight = this.showAxis ? this.height + this.axisHeight : this.height;
+					var adjustedHeight = this.showAxis ? this.height : this.height;
 					var adjustedWidth = this.showAxis ? this.width + 10 : this.width;
 					var svg = this._createSVGNSElement( 'svg' );
 					svg.setAttribute( 'width', adjustedWidth );
@@ -170,7 +201,7 @@
 			*	bar under the overlay when a mouse hover event is triggered.
 			*/
 			_createUniqueId: function( i ) {
-				var uniqueString = Math.random().toString(36).substr(2,9);
+				var uniqueString = Math.random().toString(36).substr( 2, 9 );
 				var uniqueId = 'bar_' + uniqueString;
 				this.uniqueIdMap[i] = uniqueId;
 				return uniqueId;
@@ -182,14 +213,13 @@
 
 			// Create d3 scale for the X axis
 			_getXScale: function() {
-				return d3.scale.ordinal()
-					.domain( d3.range( this.data.length ) )
-					.rangeRoundBands( [0, this.width], 0.10 );
+				return d3.scale.ordinal().rangeRoundBands( [0, this.width], 0.10 )
+				.domain( d3.range( this.data.length ) );
 			},
 
 			// Create d3 scale for Y axis
 			_getYScale: function() {
- 				return d3.scale.linear()
+				return d3.scale.linear()
 					.domain( [0, d3.max( this.data, function( d ) { return d.value; } )] )
 					.range( [0, this.height] );
 			},
@@ -198,27 +228,38 @@
 			*	Creates chart axis data
 			*	@params {Function} X Scale created by d3 for chart
 			*/
-			_createAxisData: function( xScale ) {
+			_createAxisData: function( isNumericAxis, xScale ) {
 				var axisData = [];
-				var textHeight = this.height + this.axisHeight;
 
 				for ( var i = 0; i < this.data.length; i++ ) {
 					var d = this.data[i];
 					var xValue = xScale( i );
-					var barWidth = xScale.rangeBand() - this.barSpaces;
 
-					if ( i === 0 ) {
-						axisData.push({
-							text: '0',
-							x: xValue,
-							y: textHeight
-						});
+					var barWidth = xScale.rangeBand() - this.barSpaces;
+					if ( isNumericAxis ) {
+						if ( i === 0 ) {
+							axisData.push({
+								text: '0',
+								x: xValue - this.barSpaces * 2,
+								barWidth: barWidth
+							});
+						}
+
+					}
+
+					var text = '';
+					var x = xValue;
+					if ( isNumericAxis ) {
+						text = d.info.end;
+						x = xValue + barWidth;
+					} else {
+						text = d.info.label;
 					}
 
 					axisData.push({
-						text: d.range.end,
-						x: xValue + barWidth,
-						y: textHeight
+						text: text,
+						x: x,
+						barWidth: barWidth
 					});
 				}
 
@@ -230,17 +271,26 @@
 			*	@param svg {Object} svg element for bar chart
 			*	@param xScale {Function} X Scale created by d3 for chart
 			*/
-			_drawAxis: function( svg, xScale ) {
-				var axisData = this._createAxisData( xScale );
-				var axis = svg.append( 'g' ).selectAll( '.axis-number' ).data( axisData );
-				axis.enter().append( 'text' );
+			_drawAxis: function( isNumericAxis, svg, xScale ) {
 
-				axis
-					.attr( 'class', 'axis-number' )
-					.attr( 'x', function( d ) { return d.x; } )
-					.attr( 'y', function( d ) { return d.y; } )
-					.attr( 'fill', 'black' )
-					.text( function( d ) { return d.text; } );
+				var axis = d3.select( this.$$( '.d2l-bar-chart-axis-container' ) );
+
+				var axisData = this._createAxisData( isNumericAxis, xScale );
+				var axisLabelClasses = 'd2l-bar-chart-axis';
+				for ( var i = 0; i < axisData.length; i++ ) {
+					var label = axis.append( 'div' )
+						.style( 'left',  axisData[i].x + 'px' )
+						.style( 'margin-top', '-5px' )
+						.text( axisData[i].text );
+
+					if ( this.axisType === 'text' ) {
+						axisLabelClasses += ' d2l-bar-chart-text-axis';
+						label.style( 'max-width', axisData[i].barWidth + 'px' )
+						.style( 'width', axisData[i].barWidth + 'px' );
+					}
+					label.attr( 'class', axisLabelClasses );
+				}
+
 			},
 
 			// Draws the chart
@@ -248,13 +298,13 @@
 				var self = this;
 
 				self.$$('.chart-container').appendChild( self.svg );
-				var svg = d3.select( self.svg ).append( 'g' );
 
+				var svg = d3.select( self.svg ).append( 'g' );
 				var xScale = self._getXScale();
 				var yScale = self._getYScale();
-
+				var isNumeric = self.axisType === 'numeric' ? true : false;
 				if ( self.showAxis ) {
-					self._drawAxis( svg, xScale );
+					self._drawAxis( isNumeric, svg, xScale );
 				}
 
 				var bars = svg.selectAll( '.bar' ).data( self.data );
@@ -263,24 +313,24 @@
 				overlayBars.enter().append( 'rect' );
 
 				var setBarXValue = function( d, i ) {
-					return xScale( i );
-				}
+					return xScale(i);
+				};
 
 				var setBarYValue = function( d ) {
-					return d.value === 0 ? self.height - 1 : self.height - yScale( d.value )
-				}
+					return d.value === 0 ? self.height - 1 : self.height - yScale( d.value );
+				};
 
 				var setBarHeight = function( d ) {
 					return self.height - ( d.value === 0 ? self.height - 1 : self.height - yScale( d.value ) );
-				}
+				};
 
 				var setBarFill = function( d ) {
 					return d.fill && d.value > 0 ? d.fill : self.defaultBarFill;
-				}
+				};
 
 				var setBarId = function( d, i ) {
 					return self._createUniqueId( i );
-				}
+				};
 
 				bars
 					.attr( 'id', setBarId )
@@ -333,9 +383,19 @@
 			_showTooltip: function( d, hoveredBar ) {
 				var divTooltip = d3.select( this.$$('.tooltip') );
 
-				var rangeString = d.range.start + '% - ';
-				rangeString += d.range.end === 100 ? d.range.end : d.range.end - 1;
-				rangeString += '%';
+				var rangeString = 'up to ';
+				if ( this.axisType === 'text' ) {
+					var labelText = d3.select( this.$$( '.label-text' ));
+					labelText.html( d.info.label );
+					labelText.style( 'display', 'block' );
+
+					rangeString += d.info.max;
+					rangeString += ' point(s)';
+				} else {
+					rangeString = d.info.start + '% - ';
+					rangeString += d.info.end === 100 ? d.info.end : d.info.end - 1;
+					rangeString += '%';
+				}
 
 				var rangeText = d3.select( this.$$( '.range-text' ) );
 				rangeText.html( rangeString );
@@ -355,7 +415,7 @@
 				var top = targetTop + yLocation - tooltipRect.height - 8;
 
 				divTooltip
-					.style( 'left', left +'px' )
+					.style( 'left', left + 'px' )
 					.style( 'top', top + 'px' )
 					.style( 'margin-top', '0' )
 					.style( 'opacity', 1 );
@@ -368,6 +428,6 @@
 					.style( 'margin-top', '-10px' )
 					.style( 'opacity', 0 );
 			}
-		})
+		});
 	</script>
 </dom-module>
