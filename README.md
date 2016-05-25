@@ -36,7 +36,6 @@ Include [webcomponent.js](http://webcomponents.org/polyfills/) "lite" polyfill (
 	showAxis: {Boolean} : Default = false
 	showTooltip: {Boolean} : Default = false
 	barSpaces: {Number} : Padding between bar rectangles. Default is 3
-	axisHeight: {Number} : Height of axis text. Default is 10
 	axisType: {string} : text or numeric
 }
 ```

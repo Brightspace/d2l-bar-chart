@@ -69,24 +69,24 @@
 				height: 20px;
 			}
 
-			:host > ::content .axis-number {
+			:host > ::content .d2l-bar-chart-axis-container {
+				position: relative;
+			}
+
+			:host > ::content .d2l-bar-chart-axis {
 				font-family: 'Lato';
 				color: var(--vui-color-ferrite);
 				font-weight: 500;
 				font-size: 14px;
+				position: absolute;
 			}
 
-			:host > ::content svg {
-				vertical-align: bottom;
-			}
-
-			:host > ::content axis {
-				font-weight: 500;
-				font-size: 14px;
-			}
-
-			:host > ::content .x.axis path {
-				display: none;
+			:host > ::content .d2l-bar-chart-text-axis {
+				white-space: nowrap;
+				text-overflow: ellipsis;
+				text-align: center;
+				overflow: hidden;
+				display: block;
 			}
 
 		</style>
@@ -94,6 +94,7 @@
 		<div class='chart-container'>
 			<content></content>
 		</div>
+		<div class="d2l-bar-chart-axis-container"></div>
 		<div class='tooltip'>
 			<span class='label-text'></span>
 			<span class='range-text'></span>
@@ -112,7 +113,6 @@
 				*	{
 				*		showTooltip: Boolean,
 				*		showAxis: Boolean,
-				*		axisHeight: Number,
 				*		barSpaces: Number,
 				*		axisType: String //Must be "text" or "numeric""
 				*	}
@@ -124,17 +124,17 @@
 
 				height: {
 					type: Number,
-					value: 60,
+					value: 60
 				},
 
 				width: {
 					type: Number,
-					value: 310,
+					value: 310
 				},
 
 				data: {
 					type: Array,
-					value: [],
+					value: []
 				}
 			},
 
@@ -145,7 +145,7 @@
 			created: function() {
 				this.ns = {
 					svg: 'http://www.w3.org/2000/svg'
-				}
+				};
 				this.defaultBarFill = '#9B9B9B';
 				this.uniqueIdMap = {};
 			},
@@ -156,7 +156,6 @@
 			},
 
 			_setOptions:function( options ) {
-				this.axisHeight = options.axisHeight ? options.axisHeight : 20;
 				this.barSpaces = options.barSpaces ? options.barSpaces : 3;
 				this.showAxis = options.showAxis ? options.showAxis : false;
 				this.axisType = options.axisType ? options.axisType.toLowerCase() : "none";
@@ -167,6 +166,7 @@
 					this.axisType !== "text" &&
 					this.axisType !== "numeric"
 				) {
+					console.warn( 'Hiding axis due to missing/unknown axis type' );
 					this.showAxis = false;
 				}
 			},
@@ -187,7 +187,7 @@
 			// Create SVG Element for the bar chart
 			_createChart: function() {
 				if ( !this.svg ) {
-					var adjustedHeight = this.showAxis ? this.height + this.axisHeight : this.height;
+					var adjustedHeight = this.showAxis ? this.height : this.height;
 					var adjustedWidth = this.showAxis ? this.width + 10 : this.width;
 					var svg = this._createSVGNSElement( 'svg' );
 					svg.setAttribute( 'width', adjustedWidth );
@@ -213,15 +213,8 @@
 
 			// Create d3 scale for the X axis
 			_getXScale: function() {
-				var xScale =  d3.scale.ordinal()
-					.rangeRoundBands( [0, this.width], 0.10 );
-				if ( this.axisType === "text" ) {
-					//Since the axis labeles are pulled from the scale domain we need to use the labels here
-					xScale.domain( this.data.map( function(d) { return d.info.label; } ) );
-				} else {
-					xScale.domain( d3.range( this.data.length ) );
-				}
-					return xScale;
+				return d3.scale.ordinal().rangeRoundBands( [0, this.width], 0.10 )
+				.domain( d3.range( this.data.length ) );
 			},
 
 			// Create d3 scale for Y axis
@@ -235,27 +228,38 @@
 			*	Creates chart axis data
 			*	@params {Function} X Scale created by d3 for chart
 			*/
-			_createAxisData: function( xScale ) {
+			_createAxisData: function( isNumericAxis, xScale ) {
 				var axisData = [];
-				var textHeight = this.height + this.axisHeight;
 
 				for ( var i = 0; i < this.data.length; i++ ) {
 					var d = this.data[i];
 					var xValue = xScale( i );
-					var barWidth = xScale.rangeBand() - this.barSpaces;
 
-					if ( i === 0 ) {
-						axisData.push({
-							text: '0',
-							x: xValue,
-							y: textHeight
-						});
+					var barWidth = xScale.rangeBand() - this.barSpaces;
+					if( isNumericAxis ) {
+						if ( i === 0 ) {
+							axisData.push({
+								text: '0',
+								x: xValue - this.barSpaces * 2,
+								barWidth: barWidth
+							});
+						}
+
+					}
+
+					var text = "";
+					var x = xValue;
+					if( isNumericAxis ) {
+						text = d.info.end
+						x = xValue + barWidth;
+					} else{
+						text = d.info.label
 					}
 
 					axisData.push({
-						text: d.info.end,
-						x: xValue + barWidth,
-						y: textHeight
+						text: text,
+						x: x,
+						barWidth: barWidth
 					});
 				}
 
@@ -267,17 +271,26 @@
 			*	@param svg {Object} svg element for bar chart
 			*	@param xScale {Function} X Scale created by d3 for chart
 			*/
-			_drawAxis: function( svg, xScale ) {
-				var axisData = this._createAxisData( xScale );
-				var axis = svg.append( 'g' ).selectAll( '.axis-number' ).data( axisData );
-				axis.enter().append( 'text' );
+			_drawAxis: function( isNumericAxis, svg, xScale ) {
 
-				axis
-					.attr( 'class', 'axis-number' )
-					.attr( 'x', function( d ) { return d.x; } )
-					.attr( 'y', function( d ) { return d.y; } )
-					.attr( 'fill', 'black' )
-					.text( function( d ) { return d.text; } );
+				var axis = d3.select( this.$$( '.d2l-bar-chart-axis-container' ) );
+
+				var axisData = this._createAxisData( isNumericAxis, xScale );
+				var axisLabelClasses = "d2l-bar-chart-axis"
+				for( var i = 0; i < axisData.length; i++ ) {
+					var label = axis.append( 'div' )
+						.style( 'left',  axisData[i].x + 'px' )
+						.style( 'margin-top', '-5px' )
+						.text( axisData[i].text );
+
+					if( this.axisType === "text" ) {
+						axisLabelClasses += " d2l-bar-chart-text-axis"
+						label.style( 'max-width',axisData[i].barWidth + "px" )
+						.style( 'width', axisData[i].barWidth + "px" );
+					}
+					label.attr( 'class', axisLabelClasses )
+				}
+
 			},
 
 			// Draws the chart
@@ -285,20 +298,13 @@
 				var self = this;
 
 				self.$$('.chart-container').appendChild( self.svg );
-				var svg = d3.select( self.svg ).append( 'g' );
 
+				var svg = d3.select( self.svg ).append( 'g' );
 				var xScale = self._getXScale();
 				var yScale = self._getYScale();
+				var isNumeric = self.axisType === "numeric" ? true : false;
 				if ( self.showAxis ) {
-					if ( self.axisType === "text" ) {
-						var xAxis = d3.svg.axis().scale( xScale ).orient( "bottom" );
-						svg.append( "g" )
-							.attr( "class", "x axis" )
-							.attr( "transform", "translate(0," + self.height + ")" )
-							.call( xAxis );
-					} else{
-						self._drawAxis( svg, xScale );
-					}
+					self._drawAxis( isNumeric, svg ,xScale );
 				}
 
 				var bars = svg.selectAll( '.bar' ).data( self.data );
@@ -307,9 +313,6 @@
 				overlayBars.enter().append( 'rect' );
 
 				var setBarXValue = function( d, i ) {
-					if ( self.axisType === "text" ) {
-						return xScale( d.info.label ) + ( self.barSpaces / 2 );
-					}
 					return xScale(i);
 				}
 
