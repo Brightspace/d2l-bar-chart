@@ -1,11 +1,13 @@
 {
   "name": "d2l-bar-chart",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "description": "Simple bar chart web component using d3",
   "private": true,
   "scripts": {
     "postinstall": "bower install",
-    "test": "polylint"
+    "test": "npm run test:lint:js && npm run test:lint:wc",
+    "test:lint:js": "eslint *.html",
+    "test:lint:wc": "polylint --input bar-chart.html"
   },
   "repository": {
     "type": "git",
@@ -15,6 +17,9 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "bower": "^1.7.7",
+    "eslint": "^2.10.2",
+    "eslint-config-brightspace": "^0.2.1",
+    "eslint-plugin-html": "^1.5.1",
     "polylint": "^2.10.0"
   }
 }
