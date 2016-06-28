@@ -22,8 +22,7 @@
   "dependencies": {
     "polymer": "^1.4.0",
     "d3": "~3.5.16",
-    "vui-colors": "^1.0.1",
-    "vui-typography": "^3.1.0"
+    "d2l-colors": "^2.0.0"
   },
   "repository": {
    "type": "git",
