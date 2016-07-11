@@ -17,10 +17,13 @@
 				pointer-events: none;
 				position: fixed;
 				text-align: left;
-				transition: opacity 0.3s ease-out , margin-top 0.3s ease-out, margin-left 0.3s ease-out;
 				z-index: 999;
 				min-width: 100px;
 			}
+
+			:host > .animator {
+				transition: opacity 0.3s ease-out , margin-top 0.3s ease-out, margin-left 0.3s ease-out;
+			};
 
 			:host > .tooltip::before {
 				border-top: 8px solid var(--d2l-color-ferrite);
@@ -410,6 +413,10 @@
 				var top = targetTop + yLocation - tooltipRect.height - 8;
 
 				divTooltip
+					// Animator class is used due to a issue where the
+					// opacity was animated on load causing the tooltip to show
+					// briefly in IE and FF
+					.classed( 'animator', true )
 					.style( 'left', left + 'px' )
 					.style( 'top', top + 'px' )
 					.style( 'margin-top', '0' )
@@ -420,6 +427,7 @@
 			_hideTooltip: function() {
 				var divTooltip = d3.select( this.$$('.tooltip') );
 				divTooltip
+					.classed( 'animator', true )
 					.style( 'margin-top', '-10px' )
 					.style( 'opacity', 0 );
 			}
